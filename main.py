@@ -38,9 +38,17 @@ def deliver():
     with open(src, "rb") as f:
         digest = hashlib.sha256(f.read()).hexdigest()
     os.makedirs(DEST, exist_ok=True)
-    shutil.copyfile(src, os.path.join(DEST, "entry.png"))
+    dest_path = os.path.join(DEST, "entry.png")
+    shutil.copyfile(src, dest_path)
+    # Read the delivered file back and confirm it is the same bytes
+    # we verified above, so a partial or failed copy cannot pass
+    # silently as a good delivery.
+    with open(dest_path, "rb") as f:
+        delivered = hashlib.sha256(f.read()).hexdigest()
+    assert delivered == digest, "delivered entry.png differs from source"
+    assert os.path.getsize(dest_path) == size, "delivered entry.png size changed"
     print(f"delivered entry.png to {DEST} "
-          f"({width}x{height}, {size} bytes, sha256 {digest[:16]}…)")
+          f"({width}x{height}, {size} bytes, sha256 {digest[:16]}…, verified)")
 
 
 if __name__ == "__main__":
